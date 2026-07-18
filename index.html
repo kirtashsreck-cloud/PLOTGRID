@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plot Grid | Arquitectura Narrativa</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Playfair+Display:wght@700&family=Lora:ital@0;1&family=Montserrat:wght@400;700&family=Nunito:wght@400;700&family=JetBrains+Mono&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body id="app-body">
+    <!-- Barra de herramientas principal (colapsable) -->
+    <div class="toolbar-container" id="toolbar-container">
+        <div class="toolbar-header" onclick="app.toggleToolbar()">
+            <div class="brand">
+                <i class="fas fa-pen-fancy"></i>
+                <span>PlotGrid</span>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <span class="toolbar-status">● Controles</span>
+                <button id="toggleToolbarBtn" class="btn-icon-only" title="Minimizar barra" onclick="event.stopPropagation(); app.toggleToolbar()">
+                    <i class="fas fa-chevron-up"></i>
+                </button>
+            </div>
+        </div>
+        <div class="toolbar-content" id="toolbar-content">
+            <div class="tool-group">
+                <button onclick="app.newStory()" title="Nueva Historia"><i class="fas fa-file"></i> Nuevo</button>
+                <button onclick="document.getElementById('importFile').click()" title="Abrir archivo"><i class="fas fa-folder-open"></i> Abrir</button>
+                <button onclick="app.saveToFile()" title="Guardar en archivo"><i class="fas fa-save"></i> Guardar</button>
+                <button onclick="app.saveAsFile()" title="Guardar como..."><i class="fas fa-copy"></i> Guardar como</button>
+                <button onclick="app.exportMarkdown()" title="Exportar MD"><i class="fas fa-file-export"></i> Exportar MD</button>
+                <input type="file" id="importFile" style="display:none" onchange="app.openFile(event)">
+            </div>
+            
+            <div class="tool-group">
+                <div class="zoom-control">
+                    <label>Zoom</label>
+                    <input type="range" id="zoomRange" min="0.4" max="1.5" step="0.05" value="1" oninput="app.updateZoom(this.value)">
+                </div>
+                <select id="fontSelector" onchange="app.updateFont(this.value)">
+                    <option value="'Inter', sans-serif">Inter</option>
+                    <option value="'Playfair Display', serif">Playfair Display</option>
+                    <option value="'Lora', serif">Lora</option>
+                    <option value="'Montserrat', sans-serif">Montserrat</option>
+                    <option value="'Nunito', sans-serif">Nunito</option>
+                    <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
+                    <option value="'Crimson Text', 'High Tower Text', serif">High Tower Text</option>
+                </select>
+                <button id="groupToggle" onclick="app.toggleGroupByType()" title="Agrupar por tipo">
+                    <i class="fas fa-layer-group"></i> Agrupar
+                </button>
+                <button id="compactToggle" onclick="app.toggleCompactMode()" title="Vista compacta">
+                    <i class="fas fa-compress-alt"></i> Compacto
+                </button>
+                <input type="color" id="accentColor" onchange="app.updateAccentColor(this.value)" title="Color de Acento">
+                <button id="themeToggle" onclick="app.toggleTheme()" title="Cambiar Tema">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <main>
+        <!-- Info de archivo actual -->
+        <div class="file-info" id="file-info">
+            <i class="fas fa-info-circle"></i>
+            <span id="current-file-name">Sin archivo abierto</span>
+            <span id="auto-save-status" class="auto-save-status">● Auto-guardado activo</span>
+        </div>
+
+        <!-- Panel de control de tamaño y color (colapsable) -->
+        <div class="size-controls" id="size-controls">
+            <div class="size-controls-header" onclick="app.toggleSizeControls()">
+                <span><i class="fas fa-sliders-h"></i> Controles de visualización</span>
+                <button id="toggleSizeBtn" class="btn-icon-only" onclick="event.stopPropagation(); app.toggleSizeControls()">
+                    <i class="fas fa-chevron-up"></i>
+                </button>
+            </div>
+            <div class="size-controls-content" id="size-controls-content">
+                <div class="size-control">
+                    <label><i class="fas fa-arrows-alt-h"></i> Ancho celda:</label>
+                    <input type="range" id="cell-width-slider" min="120" max="500" step="10">
+                    <span id="width-value" class="size-value">220px</span>
+                </div>
+                <div class="size-control">
+                    <label><i class="fas fa-arrows-alt-v"></i> Alto celda:</label>
+                    <input type="range" id="cell-height-slider" min="200" max="600" step="10">
+                    <span id="height-value" class="size-value">350px</span>
+                </div>
+                <div class="size-control">
+                    <label><i class="fas fa-palette"></i> Intensidad color:</label>
+                    <input type="range" id="color-intensity-slider" min="10" max="100" step="5">
+                    <span id="intensity-value" class="size-value">60%</span>
+                </div>
+                <button id="reset-size-btn" class="btn-small" title="Restablecer tamaño">
+                    <i class="fas fa-undo-alt"></i> Restablecer
+                </button>
+            </div>
+        </div>
+
+        <section id="acts-panel" class="acts-panel">
+            <div class="panel-header" onclick="app.toggleActsPanel()">
+                <h3><i class="fas fa-layer-group"></i> Estructura de Actos e Hitos</h3>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button onclick="event.stopPropagation(); app.openActModal()" title="Añadir Acto">
+                        <i class="fas fa-plus"></i> Acto
+                    </button>
+                    <button id="togglePanelBtn" onclick="event.stopPropagation(); app.toggleActsPanel()">
+                        <i class="fas fa-chevron-up"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="acts-container" class="acts-grid"></div>
+        </section>
+
+        <div class="grid-controls">
+            <button class="btn-primary" onclick="app.openChapterModal()">
+                <i class="fas fa-plus"></i> Añadir Capítulo
+            </button>
+            <button class="btn-primary" onclick="app.openPlotModal()">
+                <i class="fas fa-columns"></i> Añadir Trama
+            </button>
+            <button class="btn-secondary" onclick="app.openCharacterManager()" style="background: var(--surface-color); border: 1px solid var(--border-color);">
+                <i class="fas fa-users"></i> Gestionar Personajes
+            </button>
+        </div>
+
+        <div class="grid-wrapper">
+            <div id="plot-grid" class="plot-grid"></div>
+        </div>
+
+    </main>
+
+    <!-- Modales -->
+    <div id="modal-overlay" class="modal-overlay">
+        <div class="modal-content">
+            <div id="modal-body"></div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="app.closeModal()">Cancelar</button>
+                <button class="btn-primary" id="modal-confirm">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="definition-modal" class="modal-overlay">
+        <div class="modal-content def-modal">
+            <div id="def-body"></div>
+            <button class="btn-secondary" onclick="app.closeDefModal()">Cerrar</button>
+        </div>
+    </div>
+
+    <div id="notification-toast" class="notification-toast"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
