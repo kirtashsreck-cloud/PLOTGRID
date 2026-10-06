@@ -1,157 +1,144 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="light">
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plot Grid | Arquitectura Narrativa</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Playfair+Display:wght@700&family=Lora:ital@0;1&family=Montserrat:wght@400;700&family=Nunito:wght@400;700&family=JetBrains+Mono&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Copo de Nieve — Planificador de novelas</title>
+<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js" defer></script>
+<script src="app.js" defer></script>
 </head>
-<body id="app-body">
-    <!-- Barra de herramientas principal (colapsable) -->
-    <div class="toolbar-container" id="toolbar-container">
-        <div class="toolbar-header" onclick="app.toggleToolbar()">
-            <div class="brand">
-                <i class="fas fa-pen-fancy"></i>
-                <span>PlotGrid</span>
-            </div>
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <span class="toolbar-status">● Controles</span>
-                <button id="toggleToolbarBtn" class="btn-icon-only" title="Minimizar barra" onclick="event.stopPropagation(); app.toggleToolbar()">
-                    <i class="fas fa-chevron-up"></i>
-                </button>
-            </div>
-        </div>
-        <div class="toolbar-content" id="toolbar-content">
-            <div class="tool-group">
-                <button onclick="app.newStory()" title="Nueva Historia"><i class="fas fa-file"></i> Nuevo</button>
-                <button onclick="document.getElementById('importFile').click()" title="Abrir archivo"><i class="fas fa-folder-open"></i> Abrir</button>
-                <button onclick="app.saveToFile()" title="Guardar en archivo"><i class="fas fa-save"></i> Guardar</button>
-                <button onclick="app.saveAsFile()" title="Guardar como..."><i class="fas fa-copy"></i> Guardar como</button>
-                <button onclick="app.exportMarkdown()" title="Exportar MD"><i class="fas fa-file-export"></i> Exportar MD</button>
-                <input type="file" id="importFile" style="display:none" onchange="app.openFile(event)">
-            </div>
-            
-            <div class="tool-group">
-                <div class="zoom-control">
-                    <label>Zoom</label>
-                    <input type="range" id="zoomRange" min="0.4" max="1.5" step="0.05" value="1" oninput="app.updateZoom(this.value)">
-                </div>
-                <select id="fontSelector" onchange="app.updateFont(this.value)">
-                    <option value="'Inter', sans-serif">Inter</option>
-                    <option value="'Playfair Display', serif">Playfair Display</option>
-                    <option value="'Lora', serif">Lora</option>
-                    <option value="'Montserrat', sans-serif">Montserrat</option>
-                    <option value="'Nunito', sans-serif">Nunito</option>
-                    <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
-                    <option value="'Crimson Text', 'High Tower Text', serif">High Tower Text</option>
-                </select>
-                <button id="groupToggle" onclick="app.toggleGroupByType()" title="Agrupar por tipo">
-                    <i class="fas fa-layer-group"></i> Agrupar
-                </button>
-                <button id="compactToggle" onclick="app.toggleCompactMode()" title="Vista compacta">
-                    <i class="fas fa-compress-alt"></i> Compacto
-                </button>
-                <input type="color" id="accentColor" onchange="app.updateAccentColor(this.value)" title="Color de Acento">
-                <button id="themeToggle" onclick="app.toggleTheme()" title="Cambiar Tema">
-                    <i class="fas fa-moon"></i>
-                </button>
-            </div>
-        </div>
+<body data-theme="system">
+
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-icon">❄</span>
+      <div>
+        <h1>Copo de Nieve</h1>
+        <span class="brand-sub">planificador de novelas</span>
+      </div>
     </div>
 
-    <main>
-        <!-- Info de archivo actual -->
-        <div class="file-info" id="file-info">
-            <i class="fas fa-info-circle"></i>
-            <span id="current-file-name">Sin archivo abierto</span>
-            <span id="auto-save-status" class="auto-save-status">● Auto-guardado activo</span>
-        </div>
-
-        <!-- Panel de control de tamaño y color (colapsable) -->
-        <div class="size-controls" id="size-controls">
-            <div class="size-controls-header" onclick="app.toggleSizeControls()">
-                <span><i class="fas fa-sliders-h"></i> Controles de visualización</span>
-                <button id="toggleSizeBtn" class="btn-icon-only" onclick="event.stopPropagation(); app.toggleSizeControls()">
-                    <i class="fas fa-chevron-up"></i>
-                </button>
-            </div>
-            <div class="size-controls-content" id="size-controls-content">
-                <div class="size-control">
-                    <label><i class="fas fa-arrows-alt-h"></i> Ancho celda:</label>
-                    <input type="range" id="cell-width-slider" min="120" max="500" step="10">
-                    <span id="width-value" class="size-value">220px</span>
-                </div>
-                <div class="size-control">
-                    <label><i class="fas fa-arrows-alt-v"></i> Alto celda:</label>
-                    <input type="range" id="cell-height-slider" min="200" max="600" step="10">
-                    <span id="height-value" class="size-value">350px</span>
-                </div>
-                <div class="size-control">
-                    <label><i class="fas fa-palette"></i> Intensidad color:</label>
-                    <input type="range" id="color-intensity-slider" min="10" max="100" step="5">
-                    <span id="intensity-value" class="size-value">60%</span>
-                </div>
-                <button id="reset-size-btn" class="btn-small" title="Restablecer tamaño">
-                    <i class="fas fa-undo-alt"></i> Restablecer
-                </button>
-            </div>
-        </div>
-
-        <section id="acts-panel" class="acts-panel">
-            <div class="panel-header" onclick="app.toggleActsPanel()">
-                <h3><i class="fas fa-layer-group"></i> Estructura de Actos e Hitos</h3>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <button onclick="event.stopPropagation(); app.openActModal()" title="Añadir Acto">
-                        <i class="fas fa-plus"></i> Acto
-                    </button>
-                    <button id="togglePanelBtn" onclick="event.stopPropagation(); app.toggleActsPanel()">
-                        <i class="fas fa-chevron-up"></i>
-                    </button>
-                </div>
-            </div>
-            <div id="acts-container" class="acts-grid"></div>
-        </section>
-
-        <div class="grid-controls">
-            <button class="btn-primary" onclick="app.openChapterModal()">
-                <i class="fas fa-plus"></i> Añadir Capítulo
-            </button>
-            <button class="btn-primary" onclick="app.openPlotModal()">
-                <i class="fas fa-columns"></i> Añadir Trama
-            </button>
-            <button class="btn-secondary" onclick="app.openCharacterManager()" style="background: var(--surface-color); border: 1px solid var(--border-color);">
-                <i class="fas fa-users"></i> Gestionar Personajes
-            </button>
-        </div>
-
-        <div class="grid-wrapper">
-            <div id="plot-grid" class="plot-grid"></div>
-        </div>
-
-    </main>
-
-    <!-- Modales -->
-    <div id="modal-overlay" class="modal-overlay">
-        <div class="modal-content">
-            <div id="modal-body"></div>
-            <div class="modal-footer">
-                <button class="btn-secondary" onclick="app.closeModal()">Cancelar</button>
-                <button class="btn-primary" id="modal-confirm">Guardar</button>
-            </div>
-        </div>
+    <div class="topbar-actions">
+      <button id="btnSearch" class="btn btn-ghost" title="Buscar (Ctrl+K)">🔍 Buscar</button>
+      <button id="btnManuscript" class="btn btn-ghost" title="Vista manuscrito">📜 Manuscrito</button>
+      <button id="btnCompare" class="btn btn-ghost" title="Comparar">⚖️ Comparar</button>
+      <button id="btnAnalysis" class="btn btn-ghost" title="Análisis narrativo">🧩 Análisis</button>
+      <button id="btnImport" class="btn btn-ghost" title="Importar / Fusionar">📥 Importar</button>
+      <span id="fileStatus" class="file-status">Nueva historia</span>
+      <button id="btnTopbarToggle" class="btn btn-ghost btn-icon" title="Ocultar barra">▲</button>
+      <button id="btnViewToggle" class="btn btn-ghost" title="Vista guiada / completa">📖 Vista completa</button>
+      <button id="btnReadMode" class="btn btn-ghost" title="Modo solo lectura">👁 Solo lectura</button>
+      <button id="btnVersions" class="btn btn-ghost" title="Historial de versiones">🕓 Versiones</button>
+      <button id="btnSave" class="btn btn-primary">💾 Guardar</button>
+      <button id="btnOpen" class="btn btn-ghost">📂 Abrir</button>
+      <button id="btnNew" class="btn btn-ghost">✨ Nueva</button>
+      <button id="btnSettings" class="btn btn-icon" title="Ajustes (Ctrl+Shift+K)">⚙️</button>
     </div>
+  </header>
 
-    <div id="definition-modal" class="modal-overlay">
-        <div class="modal-content def-modal">
-            <div id="def-body"></div>
-            <button class="btn-secondary" onclick="app.closeDefModal()">Cerrar</button>
+  <button id="btnTopbarRestore" class="topbar-restore" title="Mostrar barra superior" style="display:none">▼</button>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <button id="btnSidebarToggle" class="sidebar-toggle" title="Colapsar panel">⟨</button>
+      <nav class="step-nav" id="stepNav"></nav>
+      <div class="sidebar-footer">
+        <button id="btnExport" class="btn btn-primary btn-block">📤 Exportar</button>
+      </div>
+    </aside>
+
+    <main class="content" id="content"></main>
+  </div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <header class="modal-head">
+      <h3 id="modalTitle">Título</h3>
+      <button class="modal-close" data-close-modal>✕</button>
+    </header>
+    <div class="modal-body" id="modalBody"></div>
+    <footer class="modal-foot" id="modalFoot"></footer>
+  </div>
+</div>
+
+<div class="modal" id="settingsModal">
+  <div class="modal-box">
+    <header class="modal-head">
+      <h3>⚙️ Ajustes</h3>
+      <button class="modal-close" data-close-settings>✕</button>
+    </header>
+    <div class="modal-body">
+      <div class="setting-group">
+        <label>Tema</label>
+        <div class="segmented">
+          <button data-theme-set="light">☀️ Claro</button>
+          <button data-theme-set="dark">🌙 Oscuro</button>
+          <button data-theme-set="system">🖥️ Sistema</button>
         </div>
+      </div>
+      <div class="setting-group">
+        <label>Fuente principal</label>
+        <select id="setFont">
+          <option value="Inter">Inter</option>
+          <option value="Lora">Lora (serif)</option>
+          <option value="JetBrains Mono">JetBrains Mono</option>
+          <option value="system">System UI</option>
+        </select>
+      </div>
+      <div class="setting-group">
+        <label>Color de acento</label>
+        <input type="color" id="setAccent" value="#4a6e4a">
+      </div>
+      <div class="setting-group">
+        <label>Panel de ejemplos (burbuja)</label>
+        <div class="segmented">
+          <button data-bubble="tooltip">💬 Tooltip</button>
+          <button data-bubble="side">📌 Lateral</button>
+          <button data-bubble="chat">🗨 Burbuja</button>
+          <button data-bubble="off">🚫 Off</button>
+        </div>
+      </div>
+      <div class="setting-group">
+        <label>Fichas de personaje</label>
+        <div class="segmented">
+          <button data-ficha="merged">Fusionadas</button>
+          <button data-ficha="split">Separadas</button>
+        </div>
+      </div>
     </div>
+    <footer class="modal-foot">
+      <button class="btn btn-primary" data-close-settings>Cerrar</button>
+    </footer>
+  </div>
+</div>
 
-    <div id="notification-toast" class="notification-toast"></div>
+<div class="modal" id="versionsModal">
+  <div class="modal-box">
+    <header class="modal-head">
+      <h3>🕓 Historial de versiones</h3>
+      <button class="modal-close" data-close-versions>✕</button>
+    </header>
+    <div class="modal-body" id="versionsBody"></div>
+    <footer class="modal-foot">
+      <button class="btn btn-ghost" data-close-versions>Cerrar</button>
+    </footer>
+  </div>
+</div>
 
-    <script src="script.js"></script>
+<div id="searchOverlay" class="search-overlay" style="display:none">
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="Buscar en personajes, escenas, etiquetas, pasos...">
+    <div id="searchResults" class="search-results"></div>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept=".json" style="display:none">
+<input type="file" id="importFileInput" accept=".json" style="display:none">
+
 </body>
 </html>
