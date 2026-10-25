@@ -350,6 +350,15 @@ class PlotGridApp {
         
         const isCompact = this.state.settings.compactMode;
         const cellHeight = this.state.settings.cellHeight;
+        const cellWidth = isCompact
+            ? Math.max(this.state.settings.cellWidth * 0.7, 140)
+            : this.state.settings.cellWidth;
+        
+        // ✅ APLICAR ANCHO DE COLUMNAS
+        const totalPlots = parseInt(grid.dataset.totalPlots || '0', 10);
+        if (totalPlots > 0) {
+            grid.style.gridTemplateColumns = `repeat(${totalPlots}, ${cellWidth}px)`;
+        }
         
         const dataCells = document.querySelectorAll('.grid-cell:not(.plot-header)');
         dataCells.forEach(cell => {
@@ -929,8 +938,6 @@ class PlotGridApp {
         return div.innerHTML;
     }
 
-    // ... (todos los demás métodos de modales, grid, etc. se mantienen igual)
-
     openPlotModal() {
         const modal = document.getElementById('modal-overlay');
         const body = document.getElementById('modal-body');
@@ -1270,6 +1277,7 @@ class PlotGridApp {
         structure.characterGroups.forEach(g => totalPlots += g.span);
         
         if (totalPlots === 0) {
+            grid.dataset.totalPlots = '0';
             const emptyMsg = document.createElement('div');
             emptyMsg.className = 'empty-grid-message';
             emptyMsg.style.gridColumn = '1';
@@ -1284,6 +1292,8 @@ class PlotGridApp {
         grid.style.backgroundColor = 'var(--border-color)';
         grid.style.border = '1px solid var(--border-color)';
         grid.style.gridTemplateColumns = `repeat(${totalPlots}, ${cellWidth}px)`;
+        // ✅ Guardar totalPlots para que applyCellSizes() pueda recalcular el ancho
+        grid.dataset.totalPlots = totalPlots;
         
         // FILA DE CABECERAS DE GRUPO
         if (structure.story.span > 0) {
